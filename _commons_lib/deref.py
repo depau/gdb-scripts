@@ -42,9 +42,9 @@ def deref(val: gdb.Value, *, recursive=False, from_tty=False) -> ValueOrNative:
             try:
                 val = val["_M_t"]["_M_t"]["_M_head_impl"].dereference()
             except gdb.error:
-                warnings.warn(
-                    "Failed to dereference unique_ptr normally, using str() hack"
-                )
+                # warnings.warn(
+                #     "Failed to dereference unique_ptr normally, using str() hack"
+                # )
                 ptr_type = stripped_type.template_argument(0).pointer()
                 as_str = str(val)
                 m = _unique_ptr_regex.search(as_str)
