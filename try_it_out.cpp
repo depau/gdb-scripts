@@ -15,13 +15,14 @@
 
 int main() {
     // Basic types and pointers
-    int basic_int;
-    int* int_ptr = new int(10);
-    double* double_ptr = new double(10.5);
+    int basic_int = 42;
+    double basic_double = 42.5;
+    int* int_ptr = &basic_int;
+    double* double_ptr = &basic_double;
 
     // Pointer-like objects
-    std::unique_ptr<std::string> unique_str_ptr = std::make_unique<std::string>("UniqueStr");
-    std::shared_ptr<int> shared_int_ptr = std::make_shared<int>(42);
+    auto unique_str_ptr = std::make_unique<std::string>("UniqueStr");
+    auto shared_int_ptr = std::make_shared<int>(42);
 
     // Strings and similar
     std::string str = "Hello, GDB!";
@@ -32,7 +33,7 @@ int main() {
 
     // C fixed-size arrays
     char char_array[6] = "GDB++";
-    int int_array[3];
+    int int_array[3] = {1, 2, 3};
 
     // C++ sequential containers
     std::vector<std::string> vec = {"A", "B", "C"};

@@ -5,6 +5,7 @@ from typing import Union, Generator, Tuple, cast
 
 import gdb
 
+from _commons_lib.deref import deref
 from _commons_lib.utils import (
     find_type,
     ValueOrNative,
@@ -309,6 +310,7 @@ def getitem(container: gdb.Value, item: Union[gdb.Value, int, str]) -> ValueOrNa
                 type_name.startswith("std::string")
                 or type_name.startswith("llvm::StringRef")
                 or type_name.startswith("std::basic_string")
+                or type_name.startswith("std::__cxx11::basic_string")
             ):
                 raise UserError(f"Unsupported key type: {type_name}")
             is_string = True
@@ -320,7 +322,9 @@ def getitem(container: gdb.Value, item: Union[gdb.Value, int, str]) -> ValueOrNa
 
         for key, value in stdmap_iterate(container):
             if is_string:
-                key = key.string()
+                key = deref(key)
+                if isinstance(key, gdb.Value):
+                    key = key.string()
             else:
                 key = int(key)
 
@@ -364,7 +368,14 @@ class GetItemCommand(ExtendedCommand):
         convenience_variable = opts["<convenience_variable>"]
 
         container = gdb.parse_and_eval(container_expr)
-        key = gdb.parse_and_eval(key_expr)
+        try:
+            key = gdb.parse_and_eval(key_expr)
+        except gdb.error as e:
+            if f"No symbol \"{key_expr}\" in current context." in str(e):
+                # Work around GDB being stupid and not returning strings as strings sometimes
+                key = key_expr
+            else:
+                raise
 
         value = getitem(container, key)
         self.return_value(value, var_name=convenience_variable, from_tty=from_tty)
