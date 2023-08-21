@@ -117,41 +117,58 @@ def smallvector_iterate(val: gdb.Value) -> Generator[gdb.Value, None, None]:
 
 
 def is_sequence(container: gdb.Value) -> bool:
-    if container.type.name.startswith("llvm::SmallVector"):
-        return True
-    elif container.type.name.startswith("std::vector"):
-        return True
-    elif container.type.name.startswith("llvm::ArrayRef"):
-        return True
-    elif container.type.name.startswith("std::array"):
-        return True
-    elif container.type.code == gdb.TYPE_CODE_ARRAY:
-        return True
-    elif container.type.code == gdb.TYPE_CODE_PTR:
-        return True
-    else:
+    ty = container.type.strip_typedefs()
+    if ty is None:
         return False
+
+    if ty.name is not None:
+        if ty.name.startswith("llvm::SmallVector"):
+            return True
+        elif ty.name.startswith("std::vector"):
+            return True
+        elif ty.name.startswith("llvm::ArrayRef"):
+            return True
+        elif ty.name.startswith("std::array"):
+            return True
+
+    if ty.code == gdb.TYPE_CODE_ARRAY:
+        return True
+    elif ty.code == gdb.TYPE_CODE_PTR:
+        return True
+
+    return False
 
 
 def is_map(container: gdb.Value) -> bool:
-    if container.type.name.startswith("llvm::StringMap"):
+    ty = container.type.strip_typedefs()
+    if ty is None:
+        return False
+
+    if ty.name is None:
+        return False
+
+    if ty.name.startswith("llvm::StringMap"):
         return True
-    elif container.type.name.startswith("std::map"):
+    elif ty.name.startswith("std::map"):
         return True
     else:
         return False
 
 
 def seq_iterate(container: gdb.Value) -> Generator[gdb.Value, None, None]:
-    if container.type.name.startswith("llvm::SmallVector"):
-        yield from smallvector_iterate(container)
-        return
+    if container.type is None:
+        raise UserError("Value has unknown type")
 
-    # Array-like containers
     ptr = None
     size = -1
 
-    if container.type.name.startswith("std::vector"):
+    type_name = container.type.strip_typedefs().name or ""
+
+    if type_name.startswith("llvm::SmallVector"):
+        yield from smallvector_iterate(container)
+        return
+
+    if type_name.startswith("std::vector"):
         t = container.type.template_argument(0).pointer()
         impl = container["_M_impl"]
         start = impl["_M_start"].cast(t)
@@ -160,13 +177,13 @@ def seq_iterate(container: gdb.Value) -> Generator[gdb.Value, None, None]:
         ptr = start
         size = finish - start
 
-    elif container.type.name.startswith("llvm::ArrayRef"):
+    elif type_name.startswith("llvm::ArrayRef"):
         t = container.type.template_argument(0).pointer()
 
         ptr = container["Data"].cast(t)
         size = int(container["Length"])
 
-    elif container.type.name.startswith("std::array"):
+    elif type_name.startswith("std::array"):
         t = container.type.template_argument(0).pointer()
         size_param = cast(gdb.Value, container.type.template_argument(1))
 
@@ -178,7 +195,7 @@ def seq_iterate(container: gdb.Value) -> Generator[gdb.Value, None, None]:
         size = container.type.range()[1] + 1
 
     else:
-        raise UserError(f"Unsupported container type: {container.type.name}")
+        raise UserError(f"Unsupported container type: {container.type}")
 
     for i in range(size):
         yield ptr[i]
@@ -210,7 +227,9 @@ def getitem(container: gdb.Value, item: Union[gdb.Value, int, str]) -> ValueOrNa
 
     assert isinstance(item, int) or isinstance(item, str)
 
-    if container.type.name.startswith("llvm::SmallVector"):
+    type_name = container.type.strip_typedefs().name or ""
+
+    if type_name.startswith("llvm::SmallVector"):
         if not isinstance(item, int):
             raise UserError("SmallVector index must be an integer")
 
@@ -225,7 +244,7 @@ def getitem(container: gdb.Value, item: Union[gdb.Value, int, str]) -> ValueOrNa
         begin = container["BeginX"].cast(t)
         return begin[item]
 
-    elif container.type.name.startswith("std::vector"):
+    elif type_name.startswith("std::vector"):
         if not isinstance(item, int):
             raise UserError("std::vector index must be an integer")
 
@@ -243,7 +262,7 @@ def getitem(container: gdb.Value, item: Union[gdb.Value, int, str]) -> ValueOrNa
 
         return start[item]
 
-    elif container.type.name.startswith("llvm::ArrayRef"):
+    elif type_name.startswith("llvm::ArrayRef"):
         if not isinstance(item, int):
             raise UserError("ArrayRef index must be an integer")
         size = int(container["Length"])
@@ -256,7 +275,7 @@ def getitem(container: gdb.Value, item: Union[gdb.Value, int, str]) -> ValueOrNa
 
         return container["Data"][item]
 
-    elif container.type.name.startswith("std::array"):
+    elif type_name.startswith("std::array"):
         if not isinstance(item, int):
             raise UserError("std::array index must be an integer")
         size_param = cast(gdb.Value, container.type.template_argument(1))
@@ -270,7 +289,7 @@ def getitem(container: gdb.Value, item: Union[gdb.Value, int, str]) -> ValueOrNa
 
         return container["_M_elems"][item]
 
-    elif container.type.name.startswith("llvm::StringMap"):
+    elif type_name.startswith("llvm::StringMap"):
         if not isinstance(item, str):
             raise UserError("StringMap key must be a string")
 
@@ -280,7 +299,7 @@ def getitem(container: gdb.Value, item: Union[gdb.Value, int, str]) -> ValueOrNa
 
         raise UserError(f"StringMap key '{item}' not found")
 
-    elif container.type.name.startswith("std::map"):
+    elif type_name.startswith("std::map"):
         key_type = container.type.template_argument(0)
         # Ensure that the key type is either a string or an integer.
         is_string = False
@@ -324,7 +343,7 @@ def getitem(container: gdb.Value, item: Union[gdb.Value, int, str]) -> ValueOrNa
         return container[item].cast(t)
 
     else:
-        raise UserError(f"Unsupported container type: {container.type.name}")
+        raise UserError(f"Unsupported container type: {container.type}")
 
 
 @register_command
