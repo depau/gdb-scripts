@@ -10,6 +10,17 @@ In your `~/.gdbinit` file, add the following line:
 source /path/to/gdb-scripts/commons_lib.py
 ```
 
+## Try it out
+
+Use the provided test C++ program.
+
+```bash
+clang++ -DWITH_LLVM $(llvm-config --ldflags --libs --system-libs) --std=c++20 -g -O0 try_it_out.cpp -o try_it_out
+
+# or if you don't care about LLVM
+clang++ --std=c++20 -g -O0 try_it_out.cpp -o try_it_out
+```
+
 ## Utilities
 
 ### Commands
