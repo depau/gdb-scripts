@@ -86,6 +86,11 @@ def deref(val: gdb.Value, *, recursive=False, from_tty=False) -> ValueOrNative:
                     gdb.write("Empty optional\n")
                 val = None
 
+        elif type_name.startswith("std::string_view") or type_name.startswith("std::basic_string_view"):
+            data = val["_M_str"]
+            length = int(val["_M_len"])
+            val = data.string(length=length)
+
         elif (
             type_name.startswith("std::basic_string")
             or type_name.startswith("std::__cxx11::basic_string")
