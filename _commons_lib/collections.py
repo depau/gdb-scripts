@@ -138,6 +138,10 @@ def is_sequence(container: gdb.Value) -> bool:
             return True
         elif ty.name.startswith("std::array"):
             return True
+        elif ty.name.startswith("std::set"):
+            return True
+        elif ty.name.startswith("llvm::SmallSet"):
+            return True
 
     if ty.code == gdb.TYPE_CODE_ARRAY:
         return True
