@@ -207,3 +207,9 @@ Iterate over a supported map container's key-value pairs.
 
 Add a value to the GDB history.
 
+## License
+
+MIT license. The code in `xmethods.py` is based on
+[code from Chromium](https://chromium.googlesource.com/chromium/src/+/HEAD/tools/gdb/util/class_methods.py)
+and it's licensed under a BSD-style license - see `LICENSE.xmethods` for
+details.
