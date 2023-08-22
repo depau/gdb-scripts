@@ -5,6 +5,10 @@
 #include <array>
 #include <map>
 #include <memory>
+#include <queue>
+#include <deque>
+#include <list>
+#include <stack>
 
 #ifdef WITH_LLVM
 #include <llvm/ADT/SmallVector.h>
@@ -56,6 +60,28 @@ int main() {
     llvm_str_int_map.insert({"Four", 4});
     llvm_str_int_map.insert({"Five", 5});
 #endif
+
+    // Queues, deques, lists
+    std::queue<int> int_queue;
+    int_queue.push(1);
+    int_queue.push(2);
+    int_queue.push(3);
+
+    std::deque<int> int_deque;
+    int_deque.push_back(1);
+    int_deque.push_back(2);
+    int_deque.push_back(3);
+
+    std::list<int> int_list;
+    int_list.push_back(1);
+    int_list.push_back(2);
+    int_list.push_back(3);
+
+    // Stacks
+    std::stack<int> int_stack;
+    int_stack.push(1);
+    int_stack.push(2);
+    int_stack.push(3);
 
     return 0;
 }

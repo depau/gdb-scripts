@@ -142,10 +142,15 @@ The following containers are supported:
 - C++ sequential containers
     - `std::vector`
     - `std::array`
-    - `std::set'
     - `llvm::SmallVector`
-    - `llvm::SmallSet`
     - `llvm::ArrayRef`
+    - `std::list`
+    - `std::deque`
+    - `std::queue`
+    - `std::stack`
+- C++ sets
+    - `std::set`
+    - `llvm::SmallSet`
 - C++ maps (it checks whether the value is contained in the map keys)
     - `std::map`
     - `llvm::StringMap`
