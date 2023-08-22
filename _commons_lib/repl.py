@@ -4,6 +4,7 @@ import warnings
 
 import gdb
 from ptpython import embed
+from ptpython.repl import PythonRepl
 
 from _commons_lib.utils import (
     ExtendedCommand,
@@ -42,13 +43,16 @@ class PtPythonCommand(ExtendedCommand):
 
         inject_globals()
 
+        def ptpy_configure(repl: PythonRepl):
+            repl.confirm_exit = False
+
         try:
             sys.stdout = sys.__stdout__
             sys.stderr = sys.__stderr__
             sys.stdin = sys.__stdin__
 
             user_ns = globals()
-            embed(user_ns, history_filename=history_filename)
+            embed(user_ns, history_filename=history_filename, configure=ptpy_configure)
 
         except SystemExit as e:
             if e.code != 0:
