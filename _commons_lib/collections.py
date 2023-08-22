@@ -96,15 +96,21 @@ def rbtree_iterate(rbtree: gdb.Value) -> Generator[gdb.Value, None, None]:
         yield result
 
 
-def stdmap_iterate(
+def stdset_iterate(
     val: gdb.Value,
-) -> Generator[Tuple[gdb.Value, gdb.Value], None, None]:
+) -> Generator[gdb.Value, None, None]:
     rep_type = find_type(val.type, "_Rep_type")
     node_type = find_type(rep_type, "_Link_type").strip_typedefs()
 
     for node in rbtree_iterate(val):
         node = node.cast(node_type).dereference()
-        pair = get_value_from_rb_tree_node(node)
+        yield get_value_from_rb_tree_node(node)
+
+
+def stdmap_iterate(
+    val: gdb.Value,
+) -> Generator[Tuple[gdb.Value, gdb.Value], None, None]:
+    for pair in stdset_iterate(val):
         yield pair["first"], pair["second"]
 
 
@@ -190,6 +196,19 @@ def seq_iterate(container: gdb.Value) -> Generator[gdb.Value, None, None]:
 
         ptr = container["_M_elems"].cast(t)
         size = int(size_param)
+
+    elif type_name.startswith("std::set"):
+        yield from stdset_iterate(container)
+        return
+
+    elif type_name.startswith("llvm::SmallSet"):
+        stdset_size = int(container["Set"]["_M_t"]["_M_impl"]["_M_node_count"])
+        if stdset_size <= 0:
+            yield from smallvector_iterate(container["Vector"])
+            return
+        else:
+            yield from stdset_iterate(container["Set"])
+            return
 
     elif container.type.code == gdb.TYPE_CODE_ARRAY:
         ptr = container
@@ -371,7 +390,7 @@ class GetItemCommand(ExtendedCommand):
         try:
             key = gdb.parse_and_eval(key_expr)
         except gdb.error as e:
-            if f"No symbol \"{key_expr}\" in current context." in str(e):
+            if f'No symbol "{key_expr}" in current context.' in str(e):
                 # Work around GDB being stupid and not returning strings as strings sometimes
                 key = key_expr
             else:

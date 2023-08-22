@@ -142,7 +142,9 @@ The following containers are supported:
 - C++ sequential containers
     - `std::vector`
     - `std::array`
+    - `std::set'
     - `llvm::SmallVector`
+    - `llvm::SmallSet`
     - `llvm::ArrayRef`
 - C++ maps (it checks whether the value is contained in the map keys)
     - `std::map`
@@ -187,11 +189,11 @@ history, similar to the GDB `print` command.
 
 #### `is_seq(value)`
 
-Check if a value is a supported sequential container.
+Check if a value is a supported sequential container or a supported set.
 
 #### `seq_iterate(value)`
 
-Iterate over a supported sequential container's items.
+Iterate over a supported sequential container or a set items.
 
 #### `is_map(value)`
 
