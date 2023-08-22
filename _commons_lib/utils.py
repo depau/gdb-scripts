@@ -3,7 +3,7 @@ import sys
 import traceback
 from functools import wraps
 from types import ModuleType
-from typing import List, Optional, Union, TypeAlias, Callable, Sequence
+from typing import List, Optional, Union, TypeAlias, Callable, Sequence, TypeVar
 
 import gdb
 
@@ -90,11 +90,14 @@ class PrintStacktraceMetaclass(type):
         return super().__new__(cls, name, bases, dct)
 
 
+C = TypeVar("C", bound=Callable)
+
+
 def convenience_function(
-    custom_name: Union[str, Callable, None] = None,
+    custom_name: Union[str, C, None] = None,
     aliases: Sequence[str] = (),
     pass_from_tty: bool = True,
-):
+) -> C:
     """
     Register a function as a gdb convenience function.
     The function must only take gdb.Value positional arguments; all other arguments must be keyword-only.
@@ -125,7 +128,7 @@ def convenience_function(
     else:
         name = custom_name
 
-    def actual_decorator(func: Callable):
+    def actual_decorator(func: C) -> C:
         assert func is not None
 
         if name is None:
@@ -149,25 +152,23 @@ def convenience_function(
         ):
             has_from_tty = True
 
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            return print_stacktrace(func)(*args, **kwargs)
-
         class ConvenienceFunction(gdb.Function, metaclass=PrintStacktraceMetaclass):
             @wraps(func)
-            def invoke(self, *args):
+            def invoke(self, *args, **kwargs):
                 if len(args) != arity:
                     raise TypeError(f"Expected {arity} arguments, got {len(args)}")
-                kwargs = {}
                 if has_from_tty:
                     kwargs["from_tty"] = True
                 return func(*args, **kwargs)
+
+            def __call__(self, *args, **kwargs):
+                return self.invoke(*args, **kwargs)
 
         # noinspection PyShadowingNames
         for alias in (func_name, *aliases):
             globals()[f"_convenience_fn_instance_{alias}"] = ConvenienceFunction(alias)
 
-        return wrapper
+        return print_stacktrace(func)
 
     if callable(custom_name):
         return actual_decorator(custom_name)

@@ -14,6 +14,7 @@ from _commons_lib.utils import (
     ExtendedCommand,
     register_command,
 )
+from _commons_lib.xmethods import cpp_class, member_function, CppClass
 from docopt import ParsedOptions
 
 
@@ -398,3 +399,5 @@ class GetItemCommand(ExtendedCommand):
 
         value = getitem(container, key)
         self.return_value(value, var_name=convenience_variable, from_tty=from_tty)
+
+

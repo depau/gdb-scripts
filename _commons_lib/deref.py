@@ -1,5 +1,6 @@
 import re
 import warnings
+from typing import Union
 
 import gdb
 
@@ -9,14 +10,15 @@ from _commons_lib.utils import (
     convenience_function,
     ValueOrNative,
 )
+from _commons_lib.xmethods import CppClass
 from docopt import ParsedOptions
 
 _unique_ptr_regex = re.compile(r"[{]\s*get\(\)\s*=\s*(0x[0-9a-fA-F]+)[^0-9a-fA-F]")
 _char_array_regex = re.compile(r"char \[(\d+)]")
 
 
-@convenience_function
-def deref(val: gdb.Value, *, recursive=False, from_tty=False) -> ValueOrNative:
+@convenience_function()
+def deref(val: Union[gdb.Value, CppClass], *, recursive=False, from_tty=False) -> ValueOrNative:
     dereferenced = False
 
     while isinstance(val, gdb.Value) and (recursive or not dereferenced):
